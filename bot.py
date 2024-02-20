@@ -12,7 +12,7 @@ params = {
     'model': 'gpt-4-turbo',
 }
 
-# TODO: make the command the or provider argument like the old gpt bot did
+# TODO: make the command itself the model or provider argument like the old gpt bot did
 
 @utils.arg_command("echo")
 def echo(args, message):
