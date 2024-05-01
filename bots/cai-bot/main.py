@@ -10,10 +10,10 @@ from PyCAI2 import PyAsyncCAI2
 
 load_dotenv()
 
-HOST = os.getenv("HOST")
-assert HOST, "HOST is required"
+HOST = os.getenv("IRC_HOST")
+assert HOST, "IRC_HOST is required"
 
-PORT = int(os.getenv("PORT") or 6667)
+PORT = int(os.getenv("IRC_PORT") or 6667)
 NICK = os.getenv("NICK") or "caibot"
 PASSWORD = os.getenv("PASSWORD") or None
 CHANNELS = json.loads(os.getenv("CHANNELS") or "[]")

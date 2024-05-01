@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-set -ex -o pipefail
+# set -ex -o pipefail
+set -e -o pipefail
 
 if [ -n "$CD_ENV_VARS" ]; then
 	echo "Setting environment variables from base64 encoded string"
-	echo "$CD_ENV_VARS" | base64 -d | tr -d '\n' >config.json
+	echo "$CD_ENV_VARS" | base64 -d | tr -d '\n' > config.json
 fi
 
 if [ ! -f "config.json" ]; then
