@@ -1,0 +1,7 @@
+PyCAI2
+re-ircbot==1.7.0
+trio-asyncio==0.12.0
+tls-client==1.0.1
+typing-extensions==4.10.0
+python-dotenv==1.0.1
+websockets==12.0

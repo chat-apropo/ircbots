@@ -1,0 +1,14 @@
+{
+  "bots/cai-bot": {
+    "HOST": "irc.dot.org.es",
+    "PORT": "6667",
+    "NICK": "kenough",
+    "PASSWORD": "",
+    "CHANNELS": "[\"#romanian\"]",
+    "OWNER_ID": "",
+    "AUTHOR": "",
+    "AUTHOR_ID": "",
+    "CHAR": "",
+    "CHAT_ID": ""
+  }
+}
