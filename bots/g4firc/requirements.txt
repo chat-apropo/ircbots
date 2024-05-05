@@ -1,0 +1,5 @@
+g4f
+re-ircbot==2.0.5-dev
+python-dotenv==1.0.0
+requests==2.31.0
+curl_cffi

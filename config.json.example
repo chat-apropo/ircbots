@@ -9,5 +9,14 @@
     "CHAT_ID": "",
     "POP3_SERVER": "",
     "EMAIL_ADDRESS": ""
+  },
+  "bots/g4firc": {
+    "NICK": "_gptbot",
+    "SERVER": "irc.dot.org.es",
+    "PORT": "6667",
+    "SSL": "False",
+    "CHANNELS": "[\"#bots\", \"#romanian\"]",
+    "DATABASE": "gptbot.db",
+    "MAX_CHATS_PER_USER": "4"
   }
 }
