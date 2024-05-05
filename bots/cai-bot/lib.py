@@ -55,7 +55,7 @@ def get_token_from_email():
 
 
 @alru_cache
-async def get_client() -> aiocai.Client:
+async def get_token() -> str:
     sendCode(EMAIL_ADDRESS)
     await asyncio.sleep(5)
     url = get_token_from_email()
@@ -64,59 +64,29 @@ async def get_client() -> aiocai.Client:
 
     token = authUser(url, EMAIL_ADDRESS)
     logging.info(f"Got token: {token}")
-    return aiocai.Client(token=token)
+    return token
 
 
-async def refresh_client() -> aiocai.Client:
-    # drop cache for get_client
-    get_client.cache_clear()
-    return await get_client()
+class ClientWrapper:
+    def __init__(self, token: str):
+        self.token = token
+        self.aiocai = aiocai.Client(token=token)
 
+    async def refresh_client(self) -> aiocai.Client:
+        # drop cache for get_client
+        get_token.cache_clear()
+        self.token = await get_token()
+        self.aiocai = aiocai.Client(token=self.token)
+        return self.aiocai
 
-@asynccontextmanager
-async def new_chat(char_id: str) -> AsyncIterator[tuple[ChatData, BotAnswer, WSConnect]]:
-    client = await get_client()
-    me = await client.get_me()
-    async with await client.connect() as conn:
-        new, answer = await conn.new_chat(char_id, str(me.id))
-        yield new, answer, conn
+    @asynccontextmanager
+    async def new_chat(self, char_id: str) -> AsyncIterator[tuple[ChatData, BotAnswer, WSConnect]]:
+        me = await self.aiocai.get_me()
+        async with await self.aiocai.connect() as conn:
+            new, answer = await conn.new_chat(char_id, str(me.id))
+            yield new, answer, conn
 
-
-@asynccontextmanager
-async def open_chat() -> AsyncIterator[WSConnect]:
-    client = await get_client()
-    async with await client.connect() as conn:
-        yield conn
-
-
-async def main():
-    """REPL for testing"""
-    client = await get_client()
-    me = await client.get_me()
-    print(me)
-
-    c = await client.search(quote("jesus"))
-    char = c[0]
-    print(f"{char.title} ({char.greeting}) - {char.external_id}")
-    print(f"{char.title} ({char.greeting}) - {char.external_id}")
-
-    async with new_chat(char.external_id) as (new, answer, conn):
-        print(f"{answer.name}: {answer.text}")
-        for i in range(3):
-            text = input("YOU: ")
-            message = await conn.send_message(char.external_id, new.chat_id, text)
-            print(f"{message.name}: {message.text}")
-
-    c = await client.search(quote("elon"))
-    char = c[0]
-    print(f"{char.title} ({char.greeting}) - {char.external_id}")
-    async with new_chat(char.external_id) as (new, answer, conn):
-        print(f"{answer.name}: {answer.text}")
-        while True:
-            text = input("YOU: ")
-            message = await conn.send_message(char.external_id, new.chat_id, text)
-            print(f"{message.name}: {message.text}")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    @asynccontextmanager
+    async def open_chat(self) -> AsyncIterator[WSConnect]:
+        async with await self.aiocai.connect() as conn:
+            yield conn

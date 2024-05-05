@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y curl nodejs npm jq ffmpeg && \
     pm2 set pm2-logrotate:max_size 10M && pm2 set pm2-logrotate:compress true && \
     npm install pm2-gui -g
 
-COPY . /ircbots
+COPY . /ircbots/
 WORKDIR /ircbots
 RUN bash scripts/build_envs.sh
 
