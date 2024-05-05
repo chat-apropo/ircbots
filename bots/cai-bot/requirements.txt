@@ -1,7 +1,8 @@
-PyCAI2
-re-ircbot==1.7.0
+characterai @ git+https://github.com/kramcat/CharacterAI.git@main
+async_lru==2.0.4
+re-ircbot==2.0.4-dev
 trio-asyncio==0.12.0
 tls-client==1.0.1
-typing-extensions==4.10.0
 python-dotenv==1.0.1
 websockets==12.0
+beautifulsoup4==4.12.3

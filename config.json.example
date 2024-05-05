@@ -5,10 +5,9 @@
     "NICK": "kenough",
     "PASSWORD": "",
     "CHANNELS": "[\"#romanian\"]",
-    "OWNER_ID": "",
-    "AUTHOR": "",
-    "AUTHOR_ID": "",
     "CHAR": "",
-    "CHAT_ID": ""
+    "CHAT_ID": "",
+    "POP3_SERVER": "",
+    "EMAIL_ADDRESS": ""
   }
 }
