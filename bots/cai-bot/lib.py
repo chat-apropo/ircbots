@@ -83,11 +83,10 @@ async def new_chat(char_id: str) -> AsyncIterator[tuple[ChatData, BotAnswer, WSC
 
 
 @asynccontextmanager
-async def open_chat(char_id: str) -> AsyncIterator[tuple[ChatData, WSConnect]]:
+async def open_chat() -> AsyncIterator[WSConnect]:
     client = await get_client()
     async with await client.connect() as conn:
-        new = await conn.get_chat(char_id)
-        yield new, conn
+        yield conn
 
 
 async def main():
@@ -98,6 +97,7 @@ async def main():
 
     c = await client.search(quote("jesus"))
     char = c[0]
+    print(f"{char.title} ({char.greeting}) - {char.external_id}")
     print(f"{char.title} ({char.greeting}) - {char.external_id}")
 
     async with new_chat(char.external_id) as (new, answer, conn):
