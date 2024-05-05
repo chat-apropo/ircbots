@@ -147,14 +147,15 @@ assert SERVER, "SERVER is not set"
 assert NICK, "NICK is not set"
 assert CHANNELS, "CHANNELS is not set"
 assert PORT, "PORT is not set"
-bot = IrcBot(SERVER, nick=NICK, port=PORT, use_ssl=SSL, password=PASSWORD or "", tables=[chats, message_history])
-
-bot.set_prefix("!")
-bot.set_help_header(
-    "GPT bot! Generate text using gtp4free. Context is saved for each user individually and between different providers. Check my DM!"
+bot = (
+    IrcBot(SERVER, nick=NICK, port=PORT, use_ssl=SSL, password=PASSWORD or "", tables=[chats, message_history])
+    .set_prefix("!")
+    .set_help_header(
+        "GPT bot! Generate text using gtp4free. Context is saved for each user individually and between different providers. Check my DM!"
+    )
+    .set_help_on_private(True)
+    .set_max_arguments(400)
 )
-bot.set_help_on_private(True)
-bot.set_max_arguments(400)
 
 
 @lru_cache(maxsize=512)
@@ -244,8 +245,8 @@ def preprocess(text: str) -> List[str]:
 
 def generate_formatted_ai_response(nickname: str, text: str) -> List[str]:
     """Format the text to be sent to the channel."""
-    lines = format_line_breaks(markdown_to_irc(text))
-    lines.append(f"{nickname}: --------- END ---------")
+    lines = format_line_breaks(markdown_to_irc(text, syntax_highlighting=True))
+    lines.append("--------- END ---------")
     return lines
 
 
@@ -308,7 +309,7 @@ async def parse_command(
     try:
         response = await ai_respond(list(context), model, provider=provider)
         context.append({"role": "assistant", "content": response})
-        return generate_formatted_ai_response(message.nick, response)
+        await bot.reply(message, generate_formatted_ai_response(message.nick, response))
     except Exception as e:
         return f"{message.nick}: {e} Try another provider"
 
