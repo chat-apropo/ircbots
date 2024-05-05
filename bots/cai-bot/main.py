@@ -9,6 +9,7 @@ from multiprocessing import Process
 from characterai.types.other import QueryChar
 from dotenv import load_dotenv
 from ircbot import IrcBot, Message, utils
+from ircbot.format import format_line_breaks, markdown_to_irc, truncate
 
 from lib import ClientWrapper, get_token
 
@@ -76,10 +77,7 @@ def install_conversation_hooks(mybot: CustomBot, nick: str = NICK, char: str = C
         text = args[1].strip()
         async with mybot.data.client.open_chat() as conn:
             answer = await conn.send_message(char, chat_id, text)
-        lines = []
-        for part in answer.text.split("\n"):
-            lines.extend(utils.split_in_lines(part))
-        await mybot.reply(message, lines)
+        await mybot.reply(message, format_line_breaks(markdown_to_irc(answer.text)))
 
 
 def add_character_to_channel(token: str, channel: str, nick: str, char: QueryChar):
@@ -89,7 +87,7 @@ def add_character_to_channel(token: str, channel: str, nick: str, char: QueryCha
     async def get_char():
         await new_bot.join(channel)
         async with new_bot.data.client.new_chat(char.external_id) as (new, answer, conn):
-            await new_bot.send_message(answer.text)
+            await new_bot.send_message(format_line_breaks(markdown_to_irc(answer.text)), channel)
             install_conversation_hooks(new_bot, nick=new_bot.nick, char=char.external_id, chat_id=new.chat_id)
             bot.install_hooks()
 
@@ -107,7 +105,7 @@ def get_search_results_lines(message: Message, search_results: list[QueryChar]) 
         del search_results[i]
         if i == MAX_SEARCH_RESULTS - 1:
             break
-    return [utils.truncate(line, 400) for line in lines]
+    return [truncate(line, 400) for line in lines]
 
 
 @bot.arg_command("search", "Search for a character", "search <query>")
