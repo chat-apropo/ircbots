@@ -1,5 +1,5 @@
-# Simple echo bot example with random color echo because why not
 import json
+import logging
 
 import requests
 from IrcBot.bot import Color, IrcBot, utils
@@ -38,5 +38,6 @@ async def onConnect(bot: IrcBot):
 
 
 if __name__ == "__main__":
+    utils.setLogging(logging.DEBUG)
     bot = IrcBot("irc.dot.org.es", nick="ThePrototype")
     bot.runWithCallback(onConnect)

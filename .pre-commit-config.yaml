@@ -4,5 +4,6 @@ repos:
       - id: generate-config-example-from-env-examples
         name: Generate config example from env examples
         entry: bash -c 'python3 scripts/gen_config.py > config.json.example'
-        language: system
+        language: python
         pass_filenames: false
+        additional_dependencies: ["python-dotenv"]
