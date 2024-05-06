@@ -38,6 +38,6 @@ async def onConnect(bot: IrcBot):
 
 
 if __name__ == "__main__":
-    utils.setLogging(logging.DEBUG)
-    bot = IrcBot("irc.dot.org.es", nick="ThePrototype")
+    utils.setLogging(logging.INFO)
+    bot = IrcBot("irc.dot.org.es", nick="_gpt")
     bot.runWithCallback(onConnect)
