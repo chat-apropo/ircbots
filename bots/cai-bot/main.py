@@ -184,6 +184,10 @@ async def add(args: re.Match, message: Message):
 
     char = user_data.shown_results[number - 1]
     nick = irc_sanitize_nick(char.participant__name)
+    if nick in bot.data.channels[message.channel].children:
+        await bot.reply(message, f"Character '{nick}' is already in use. Delete it first.")
+        return
+
     process = Process(target=add_character_to_channel, args=(bot.data.token, message.channel, nick, char), daemon=True)
     process.start()
     bot.data.channels[message.channel].children[nick] = process
