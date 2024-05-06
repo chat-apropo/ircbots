@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import time
 from dataclasses import dataclass, field
 from multiprocessing import Process
 
@@ -97,7 +98,12 @@ def add_character_to_channel(token: str, channel: str, nick: str, char: QueryCha
         bot.install_hooks()
         del new_bot._defined_command_dict["help"]
 
-    new_bot.run_with_callback(get_char)
+    while True:
+        try:
+            new_bot.run_with_callback(get_char)
+        except ConnectionError:
+            logging.error(f"Connection error for {nick}, trying again in...")
+            time.sleep(2)
 
 
 def get_search_results_lines(message: Message, search_results: list[QueryChar]) -> list[str]:
