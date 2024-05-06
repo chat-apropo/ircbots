@@ -7,6 +7,7 @@ import time
 from dataclasses import dataclass, field
 from multiprocessing import Process
 
+import websockets
 from characterai.types.other import QueryChar
 from dotenv import load_dotenv
 from ircbot import IrcBot, Message, utils
@@ -77,8 +78,17 @@ def install_conversation_hooks(mybot: CustomBot, nick: str = NICK, char: str = C
     @mybot.regex_cmd_with_messsage(rf"(?i)^((?:.*\s)?{nick}([\s|,|\.|\;|\?|!|:]*)(?:\s.*)?)$", False)
     async def mention(args: re.Match, message: Message):
         text = args[1].strip()
-        async with mybot.data.client.open_chat() as conn:
-            answer = await conn.send_message(char, chat_id, text)
+        exc = None
+        for _ in range(3):
+            try:
+                async with mybot.data.client.open_chat() as conn:
+                    answer = await conn.send_message(char, chat_id, text)
+                break
+            except websockets.exceptions.ConnectionClosedOK as e:
+                exc = e
+                logging.error("Connection closed. Reconnecting...")
+        else:
+            return await mybot.reply(message, f"Error: {exc or 'Unknown'}")
         await mybot.reply(message, format_response(answer.text))
 
 
