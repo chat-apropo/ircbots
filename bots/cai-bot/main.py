@@ -71,13 +71,18 @@ utils.set_loglevel(logging.INFO)
 bot.set_prefix("+")
 
 
+def format_response(text: str) -> list[str]:
+    lines = format_line_breaks(markdown_to_irc(text))
+    return [l for l in lines if l]
+
+
 def install_conversation_hooks(mybot: CustomBot, nick: str = NICK, char: str = CHAR, chat_id: str = CHAT_ID):
     @mybot.regex_cmd_with_messsage(rf"(?i)^((?:.*\s)?{nick}([\s|,|\.|\;|\?|!|:]*)(?:\s.*)?)$", False)
     async def mention(args: re.Match, message: Message):
         text = args[1].strip()
         async with mybot.data.client.open_chat() as conn:
             answer = await conn.send_message(char, chat_id, text)
-        await mybot.reply(message, format_line_breaks(markdown_to_irc(answer.text)))
+        await mybot.reply(message, format_response(answer.text))
 
 
 def add_character_to_channel(token: str, channel: str, nick: str, char: QueryChar):
@@ -87,9 +92,10 @@ def add_character_to_channel(token: str, channel: str, nick: str, char: QueryCha
     async def get_char():
         await new_bot.join(channel)
         async with new_bot.data.client.new_chat(char.external_id) as (new, answer, conn):
-            await new_bot.send_message(format_line_breaks(markdown_to_irc(answer.text)), channel)
+            await new_bot.send_message(format_response(answer.text), channel)
             install_conversation_hooks(new_bot, nick=new_bot.nick, char=char.external_id, chat_id=new.chat_id)
-            bot.install_hooks()
+        bot.install_hooks()
+        del new_bot._defined_command_dict["help"]
 
     new_bot.run_with_callback(get_char)
 
@@ -100,7 +106,9 @@ def get_search_results_lines(message: Message, search_results: list[QueryChar]) 
     if not user_data or len(search_results) == 0:
         return ["No search results available"]
     for i, char in enumerate(search_results):
-        lines.append(f"{i+1}) \x02{char.participant__name}\x02 {char.title} ({char.greeting})")
+        lines.append(
+            f"{i+1}) \x02{char.participant__name}\x02 {markdown_to_irc(char.title)} ({markdown_to_irc(char.greeting)})"
+        )
         user_data.shown_results.append(char)
         del search_results[i]
         if i == MAX_SEARCH_RESULTS - 1:
@@ -139,7 +147,7 @@ async def add(args: re.Match, message: Message):
         await bot.reply(message, "No search results available")
         return
 
-    if not user_data.search_results:
+    if not user_data.shown_results:
         await bot.reply(message, "No search results available")
         return
 
@@ -176,7 +184,7 @@ async def delete(args: re.Match, message: Message):
         await bot.reply(message, f"Character '{args[1]}' not found")
         return
 
-    process: Process = bot.data.channels[message.channel].children[args[1]]
+    process: Process = bot.data.channels[message.channel].children.pop(args[1])
     await kill_process(process)
 
 
