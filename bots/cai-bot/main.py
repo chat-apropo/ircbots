@@ -107,20 +107,24 @@ def add_character_to_channel(token: str, channel: str, nick: str, char: QueryCha
         return new_bot
 
     async def get_char():
-        await new_bot.join(channel)
         async with new_bot.data.client.new_chat(char.external_id) as (new, answer, conn):
+            text = answer.text
             await bot.sleep(0.5)
-            await new_bot.send_message(format_response(answer.text), channel)
-            install_conversation_hooks(new_bot, nick=new_bot.nick, char=char.external_id, chat_id=new.chat_id)
+        logging.info(f"Got response for {nick}")
+        install_conversation_hooks(new_bot, nick=new_bot.nick, char=char.external_id, chat_id=new.chat_id)
         new_bot.install_hooks()
+        await new_bot.join(channel)
+        await new_bot.send_message(format_response(text), channel)
 
     for _ in range(3):
         try:
             new_bot = create_bot()
             new_bot.run_with_callback(get_char)
         except ConnectionError:
-            logging.error(f"Connection error for {nick}, trying again in...")
+            logging.error(f"Connection error for {nick}, trying again ...")
             time.sleep(3)
+
+    logging.error(f"Connection error for {nick}, giving up.")
 
 
 def get_search_results_lines(message: Message, search_results: list[QueryChar]) -> list[str]:
