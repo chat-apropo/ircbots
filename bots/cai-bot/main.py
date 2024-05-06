@@ -77,6 +77,9 @@ def format_response(text: str) -> list[str]:
 def install_conversation_hooks(mybot: CustomBot, nick: str = NICK, char: str = CHAR, chat_id: str = CHAT_ID):
     @mybot.regex_cmd_with_messsage(rf"(?i)^((?:.*\s)?{nick}([\s|,|\.|\;|\?|!|:]*)(?:\s.*)?)$", False)
     async def mention(args: re.Match, message: Message):
+        if message.sender_nick == NICK:
+            return
+
         text = args[1].strip()
         exc = None
         for _ in range(3):
