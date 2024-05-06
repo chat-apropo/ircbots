@@ -10,7 +10,7 @@ from multiprocessing import Process
 from characterai.types.other import QueryChar
 from dotenv import load_dotenv
 from ircbot import IrcBot, Message, utils
-from ircbot.format import format_line_breaks, markdown_to_irc, truncate
+from ircbot.format import format_line_breaks, irc_sanitize_nick, markdown_to_irc, truncate
 
 from lib import ClientWrapper, get_token
 
@@ -61,14 +61,6 @@ class CustomBot(IrcBot):
     @data.setter
     def data(self, value: BotData):
         self._data = value
-
-
-def irc_sanitize_nick(s: str) -> str:
-    nick = s.strip().casefold()
-    nick = re.sub(r"\s+", "_", nick)
-    nick = re.sub(r"[^a-z0-9_]", "", nick)
-    nick = nick.lstrip("_").rstrip("_")
-    return nick
 
 
 bot = CustomBot(HOST, PORT, NICK, CHANNELS, PASSWORD)
@@ -207,6 +199,12 @@ async def wipeout(args: re.Match, message: Message):
         await kill_process(process)
     bot.data.channels[message.channel].children = {}
     await bot.reply(message, "All characters removed")
+
+
+@bot.arg_command("list", "List all characters in the conversation", "list")
+async def list_characters(args: re.Match, message: Message):
+    characters = list(bot.data.channels[message.channel].children.keys())
+    await bot.reply(message, f"Managed nicks: {', '.join(characters)}")
 
 
 async def on_connect():
