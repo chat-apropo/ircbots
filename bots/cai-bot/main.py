@@ -64,7 +64,11 @@ class CustomBot(IrcBot):
 
 
 def irc_sanitize_nick(s: str) -> str:
-    return s.replace(" ", "_").replace("-", "_").replace(".", "_").replace("#", "_").casefold()
+    nick = s.strip().casefold()
+    nick = re.sub(r"\s+", "_", nick)
+    nick = re.sub(r"[^a-z0-9_]", "", nick)
+    nick = nick.lstrip("_").rstrip("_")
+    return nick
 
 
 bot = CustomBot(HOST, PORT, NICK, CHANNELS, PASSWORD)
@@ -90,15 +94,18 @@ def add_character_to_channel(token: str, channel: str, nick: str, char: QueryCha
     new_bot = CustomBot(HOST, PORT, nick, channel)
     new_bot.data = BotData(channels={}, token=token, client=ClientWrapper(token))
 
+    @new_bot.regex_cmd_with_messsage("^help .*")
+    def no_help(args: re.Match, message: Message):
+        pass
+
     async def get_char():
         await new_bot.join(channel)
         async with new_bot.data.client.new_chat(char.external_id) as (new, answer, conn):
             await new_bot.send_message(format_response(answer.text), channel)
             install_conversation_hooks(new_bot, nick=new_bot.nick, char=char.external_id, chat_id=new.chat_id)
-        bot.install_hooks()
-        del new_bot._defined_command_dict["help"]
+        new_bot.install_hooks()
 
-    while True:
+    for _ in range(5):
         try:
             new_bot.run_with_callback(get_char)
         except ConnectionError:
