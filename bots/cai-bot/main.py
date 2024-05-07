@@ -132,14 +132,15 @@ def get_search_results_lines(message: Message, search_results: list[QueryChar]) 
     user_data = bot.data.channels[message.channel].users.get(message.sender_nick)
     if not user_data or len(search_results) == 0:
         return ["No search results available"]
+    i = 0
     for i, char in enumerate(search_results):
         lines.append(
             f"{i+1}) \x02{char.participant__name}\x02 {markdown_to_irc(char.title)} ({markdown_to_irc(char.greeting)})"
         )
         user_data.shown_results.append(char)
-        del search_results[i]
         if i == MAX_SEARCH_RESULTS - 1:
             break
+    user_data.search_results = search_results[i + 1 :]
     return [truncate(line, 400) for line in lines]
 
 
