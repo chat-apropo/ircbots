@@ -1,5 +1,5 @@
 g4f
-re-ircbot==2.0.6-dev
+re-ircbot==2.0.12-dev
 python-dotenv==1.0.0
 requests==2.31.0
 pygments==2.18.0

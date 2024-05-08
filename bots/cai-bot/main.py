@@ -77,7 +77,6 @@ async def format_response(bot: CustomBot, text: str, nick: str | None = None) ->
         my_nick = me.username
         name = "everyone" if nick is None else nick
         text = re.sub(rf"\b{re.escape(my_nick)}\b", name, text, flags=re.IGNORECASE)
-
     lines = format_line_breaks(markdown_to_irc(text))
     return [l for l in lines if l]
 
