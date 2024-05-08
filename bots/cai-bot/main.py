@@ -8,10 +8,12 @@ from dataclasses import dataclass, field
 from multiprocessing import Process
 
 import websockets
+from characterai.types.account import Anonymous
 from characterai.types.other import QueryChar
 from dotenv import load_dotenv
 from ircbot import IrcBot, Message, utils
 from ircbot.format import format_line_breaks, irc_sanitize_nick, markdown_to_irc, truncate
+from pydantic import ValidationError
 
 from lib import ClientWrapper, get_token
 
@@ -65,11 +67,17 @@ class CustomBot(IrcBot):
 
 
 bot = CustomBot(HOST, PORT, NICK, CHANNELS, PASSWORD)
-utils.set_loglevel(logging.INFO)
+utils.set_loglevel(logging.DEBUG)
 bot.set_prefix("+")
 
 
-def format_response(text: str) -> list[str]:
+async def format_response(bot: CustomBot, text: str, nick: str | None = None) -> list[str]:
+    me = await bot.data.client.aiocai.get_me()
+    if not isinstance(me, Anonymous):
+        my_nick = me.username
+        name = "everyone" if nick is None else nick
+        text = re.sub(rf"\b{re.escape(my_nick)}\b", name, text, flags=re.IGNORECASE)
+
     lines = format_line_breaks(markdown_to_irc(text))
     return [l for l in lines if l]
 
@@ -90,9 +98,11 @@ def install_conversation_hooks(mybot: CustomBot, nick: str = NICK, char: str = C
             except websockets.exceptions.ConnectionClosedOK as e:
                 exc = e
                 logging.error("Connection closed. Reconnecting...")
+            except ValidationError:
+                return await mybot.reply(message, "-#" * 20)
         else:
             return await mybot.reply(message, f"Error: {exc or 'Unknown'}")
-        await mybot.reply(message, format_response(answer.text))
+        await mybot.reply(message, await format_response(mybot, answer.text, message.sender_nick))
 
 
 def add_character_to_channel(token: str, channel: str, nick: str, char: QueryChar):
@@ -114,15 +124,15 @@ def add_character_to_channel(token: str, channel: str, nick: str, char: QueryCha
         install_conversation_hooks(new_bot, nick=new_bot.nick, char=char.external_id, chat_id=new.chat_id)
         new_bot.install_hooks()
         await new_bot.join(channel)
-        await new_bot.send_message(format_response(text), channel)
+        await new_bot.send_message(await format_response(new_bot, text), channel)
 
-    for _ in range(3):
+    for _ in range(5):
         try:
             new_bot = create_bot()
             new_bot.run_with_callback(get_char)
-        except ConnectionError:
+        except ConnectionError as e:
             logging.error(f"Connection error for {nick}, trying again ...")
-            time.sleep(3)
+            time.sleep(2)
 
     logging.error(f"Connection error for {nick}, giving up.")
 
@@ -134,8 +144,12 @@ def get_search_results_lines(message: Message, search_results: list[QueryChar]) 
         return ["No search results available"]
     i = 0
     for i, char in enumerate(search_results):
+        title = char.title.replace("{{user}}", message.sender_nick)
+        greeting = char.greeting.replace("{{user}}", message.sender_nick)
         lines.append(
-                truncate(f"{i+1}) \x02{char.participant__name}\x02 - {markdown_to_irc(char.title)} :: {markdown_to_irc(char.greeting)}")
+            truncate(
+                f"{i+1}) \x02{char.participant__name}\x02 - {markdown_to_irc(title)} :: {markdown_to_irc(greeting)}",
+            )
         )
         user_data.shown_results.append(char)
         if i == MAX_SEARCH_RESULTS - 1:

@@ -5,7 +5,6 @@ import poplib
 from contextlib import asynccontextmanager
 from email.parser import Parser
 from typing import AsyncIterator
-from urllib.parse import quote
 
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
