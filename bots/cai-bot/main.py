@@ -135,13 +135,13 @@ def get_search_results_lines(message: Message, search_results: list[QueryChar]) 
     i = 0
     for i, char in enumerate(search_results):
         lines.append(
-            f"{i+1}) \x02{char.participant__name}\x02 {markdown_to_irc(char.title)} ({markdown_to_irc(char.greeting)})"
+                truncate(f"{i+1}) \x02{char.participant__name}\x02 - {markdown_to_irc(char.title)} :: {markdown_to_irc(char.greeting)}")
         )
         user_data.shown_results.append(char)
         if i == MAX_SEARCH_RESULTS - 1:
             break
     user_data.search_results = search_results[i + 1 :]
-    return [truncate(line, 400) for line in lines]
+    return lines
 
 
 @bot.arg_command("search", "Search for a character", "search <query>")
