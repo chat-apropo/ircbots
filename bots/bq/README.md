@@ -1,3 +1,10 @@
+# Service account
+Create a service account json from [IAM & Admin](https://console.cloud.google.com/iam-admin/cloudidentity/consumer) > Service accounts > Create service account.
+
+The account should have only the roles:
+- BigQuery Data Viewer `roles/bigquery.dataViewer`
+- BigQuery Job User `roles/bigquery.jobUser`
+
 # Usage example
 
 ```sql
