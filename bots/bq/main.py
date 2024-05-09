@@ -94,7 +94,7 @@ async def accumulate_query(message: Message):
 
     bot.accumulated_queries.append(message, message.text)
     if not bot.accumulated_queries.is_finished:
-        if bot.accumulated_queries.count_lines(message) % 4 == 0:
+        if bot.accumulated_queries.count_lines(message) % 10 == 0:
             await bot.reply(message, "I'm still waiting for the rest of the query. Please end it with `;`")
         return ReplyIntent(None, accumulate_query)
 
