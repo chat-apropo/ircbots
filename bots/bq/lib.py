@@ -64,6 +64,13 @@ def bq_query(query: str) -> pd.DataFrame:
     return df
 
 
+def bq_schema(table: str) -> tuple[str | None, pd.DataFrame]:
+    table_ref = client.get_table(table)
+    schema = table_ref.schema
+    description = table_ref.description
+    return str(description), pd.DataFrame([{field.name: field.field_type for field in schema}])
+
+
 def list_datasets():
     datasets = list(client.list_datasets())  # Make an API request.
     project = client.project

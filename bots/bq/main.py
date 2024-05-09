@@ -6,8 +6,9 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from google.cloud.exceptions import ClientError
 from ircbot import IrcBot, Message, ReplyIntent
+from ircbot.format import format_line_breaks, markdown_to_irc
 
-from lib import MAX_PROCESSING_SIZE, bq_process_size, bq_query, human_size
+from lib import MAX_PROCESSING_SIZE, bq_process_size, bq_query, bq_schema, human_size
 
 load_dotenv()
 
@@ -62,7 +63,11 @@ class BqBot(IrcBot):
         self.accumulated_queries = BotData({})
 
 
-bot = BqBot(HOST, nick=NICK, channels=CHANNELS, password=PASSWORD, use_ssl=True, port=PORT)
+bot = (
+    BqBot(HOST, nick=NICK, channels=CHANNELS, password=PASSWORD, use_ssl=True, port=PORT)
+    .set_parser_order(False)
+    .set_single_match(True)
+)
 
 
 async def safe_run_query(message: Message):
@@ -110,6 +115,26 @@ async def initiator(args: re.Match, message: Message):
         await bot.reply(message, "I will be silently waiting for the rest of the query. Please end it with `;`")
         return ReplyIntent(None, accumulate_query)
     await safe_run_query(message)
+
+
+@bot.regex_cmd_with_messsage(rf"^\s*{re.escape(NICK)}:? `((?:[^`]|\S)+)`$")
+async def bq_get_schema(args: re.Match, message: Message):
+    table = args[1]
+    description, schema = bq_schema(table)
+    if description:
+        await bot.reply(message, f"Description: {description}")
+    await bot.reply(message, schema.to_markdown(index=False) or "?")
+
+
+@bot.regex_cmd_with_messsage(rf"^\s*{re.escape(NICK)}:? help$")
+async def help_message(args: re.Match, message: Message):
+    body = f"""
+Hi! I'm a bot that can run BigQuery queries. Here are some commands you can use:
+- **{NICK}**: `<query>`: Run a BigQuery query. The query should end with `;`. You can do multi line queries.
+- **{NICK}**: `<table_name>`: Get the schema of a BigQuery table.
+- **{NICK}**: `help`: Show this help message.
+    """
+    await bot.reply(message, format_line_breaks(markdown_to_irc(body)))
 
 
 if __name__ == "__main__":
