@@ -1,4 +1,4 @@
 google-cloud-bigquery
-re-ircbot
-pprint
-
+re-ircbot==2.0.10-dev
+prettyprint
+dotenv
