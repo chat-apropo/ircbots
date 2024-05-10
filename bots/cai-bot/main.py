@@ -67,7 +67,7 @@ class CustomBot(IrcBot):
 
 
 bot = CustomBot(HOST, PORT, NICK, CHANNELS, PASSWORD)
-utils.set_loglevel(logging.DEBUG)
+utils.set_loglevel(logging.INFO)
 bot.set_prefix("+")
 
 

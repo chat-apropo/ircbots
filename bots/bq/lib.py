@@ -64,11 +64,19 @@ def bq_query(query: str) -> pd.DataFrame:
     return df
 
 
+def format_field_type(field: bigquery.SchemaField) -> str:
+    if field.mode == "RECORD":
+        return ", ".join([f"{sub_field.name}-({format_field_type(sub_field)})" for sub_field in field.fields])
+    return field.field_type
+
+
 def bq_schema(table: str) -> tuple[str | None, pd.DataFrame]:
     table_ref = client.get_table(table)
-    schema = table_ref.schema
+    schema: list[bigquery.SchemaField] = table_ref.schema
     description = table_ref.description
-    return str(description), pd.DataFrame([{field.name: field.field_type for field in schema}])
+    return str(description), pd.DataFrame(
+        [{field.name: f"{field.mode}: {format_field_type(field)}" for field in schema}]
+    )
 
 
 def list_datasets():
