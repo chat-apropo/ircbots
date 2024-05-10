@@ -120,7 +120,11 @@ async def initiator(args: re.Match, message: Message):
 @bot.regex_cmd_with_messsage(rf"^\s*{re.escape(NICK)}:? `((?:[^`]|\S)+)`$")
 async def bq_get_schema(args: re.Match, message: Message):
     table = args[1]
-    description, schema = bq_schema(table)
+    try:
+        description, schema = bq_schema(table)
+    except ClientError as e:
+        await bot.reply(message, ", ".join([err["message"] for err in e.errors]))
+        return
     if description:
         await bot.reply(message, f"Description: {description}")
     await bot.reply(message, schema.to_markdown(index=False) or "?")
