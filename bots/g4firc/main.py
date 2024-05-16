@@ -9,12 +9,12 @@ import g4f
 import requests
 from cachetools import TTLCache
 from dotenv import dotenv_values
-from g4f import Provider
+from g4f import Provider, ProviderType
+from g4f.client import AsyncClient
+from g4f.stubs import ChatCompletion
 from ircbot import Color, IrcBot, Message
 from ircbot.client import MAX_MESSAGE_LEN, PersistentData
 from ircbot.format import format_line_breaks, markdown_to_irc
-
-import g4fwrapper
 
 config = dotenv_values()
 NICK = config["NICK"]
@@ -101,7 +101,7 @@ providers = list(Provider.ProviderUtils.convert.values())
 providers = [
     provider
     for provider in providers
-    if provider.needs_auth is False and get_provider_name(provider).lower() not in PROVIDER_BLACKLIST
+    if not provider.needs_auth and get_provider_name(provider).lower() not in PROVIDER_BLACKLIST
 ]
 
 command_to_provider = {get_provider_name(provider).lower(): provider for provider in providers}
@@ -226,9 +226,16 @@ def pastebin(text) -> str:
     return response.text
 
 
-async def ai_respond(messages: list[dict], model: str | None = None, provider=None) -> str:
+async def ai_respond(messages: list[dict], model: str, provider: ProviderType) -> str:
     """Generate a response from the AI."""
-    return await g4fwrapper.create(model, messages, provider=provider, stream=False)
+    client = AsyncClient()
+    chat_completion: ChatCompletion = await client.chat.completions.create(
+        messages=messages, model=model, provider=provider, stream=False
+    )
+    choices = chat_completion.choices
+    if len(choices) == 0:
+        raise Exception("No response from the provider")
+    return choices[0].message.content
 
 
 def preprocess(text: str) -> List[str]:
@@ -323,14 +330,14 @@ async def clear_context(match: re.Match, message: Message):
     return f"{message.nick}: Context cleared."
 
 
-async def test_provider(provider: Provider.BaseProvider, queue: asyncio.Queue, semaphore: asyncio.Semaphore) -> bool:
+async def test_provider(provider: ProviderType, queue: asyncio.Queue, semaphore: asyncio.Semaphore) -> bool:
     """Sends hi to a provider and check if there is response or error."""
     async with semaphore:
         try:
             messages = [{"role": "user", "content": "hi"}]
             model = provider.model[0]
             async with asyncio.timeout(10):
-                text = await g4fwrapper.create(model, messages, provider=provider, stream=False)
+                text = await ai_respond(messages, model, provider=provider)
             result = bool(text) and isinstance(text, str)
         except Exception:
             result = False
