@@ -97,11 +97,7 @@ def get_provider_name(provider):
 
 
 # Load all modules from Provider.Providers
-providers = [
-    getattr(Provider, provider)
-    for provider in Provider.__all__
-    if not provider.startswith("__") and getattr(Provider, provider) is not Provider.base_provider.BaseProvider
-]
+providers = list(Provider.ProviderUtils.convert.values())
 providers = [
     provider
     for provider in providers
