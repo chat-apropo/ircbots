@@ -327,17 +327,19 @@ async def clear_context(match: re.Match, message: Message):
     return f"{message.nick}: Context cleared."
 
 
-async def test_provider(provider: Provider.BaseProvider, queue: asyncio.Queue):
+async def test_provider(provider: Provider.BaseProvider, queue: asyncio.Queue, semaphore: asyncio.Semaphore) -> bool:
     """Sends hi to a provider and check if there is response or error."""
-    try:
-        messages = [{"role": "user", "content": "hi"}]
-        model = provider.model[0]
-        text = await g4fwrapper.create(model, messages, provider=provider, stream=False)
-        result = bool(text) and isinstance(text, str)
-    except Exception:
-        result = False
+    async with semaphore:
+        try:
+            messages = [{"role": "user", "content": "hi"}]
+            model = provider.model[0]
+            async with asyncio.timeout(10):
+                text = await g4fwrapper.create(model, messages, provider=provider, stream=False)
+            result = bool(text) and isinstance(text, str)
+        except Exception:
+            result = False
 
-    await queue.put((provider, result))
+        await queue.put((provider, result))
     return result
 
 
@@ -368,7 +370,8 @@ async def selftest(match: re.Match, message: Message):
         queue = asyncio.Queue()
 
         async def producer():
-            await asyncio.gather(*[test_provider(provider, queue) for provider in providers])
+            semaphore = asyncio.Semaphore(8)
+            await asyncio.gather(*[test_provider(provider, queue, semaphore) for provider in providers])
             await queue.join()
             await queue.put((None, None))
 
